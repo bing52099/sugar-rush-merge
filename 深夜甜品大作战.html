@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>深夜甜品大作战 (Sugar Rush Merge) - AI产品求职Demo</title>
+    <script src="https://cdn.staticfile.net/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        /* UI & Layout 规范 */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffe6ea;
+            overflow: hidden;
+            font-family: 'Inter', 'Helvetica', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #2d2d2d;
+            touch-action: none; 
+        }
+
+        #game-container {
+            position: relative;
+            
+            /* --- 运行页面背景图片 --- */
+            background-image: url('yunxingye.png');
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat; 
+            /* ---------------------------- */
+            
+            width: 100vw;
+            height: 100dvh; 
+            box-shadow: 0 0 20px rgba(255, 182, 193, 0.6); 
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background-color: transparent !important; 
+        }
+
+        /* 通用 UI 覆盖层基础样式 */
+        .ui-layer {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            color: #5c3a21; 
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* --- 起始页专属背景图片样式 --- */
+        #start-screen {
+            background-image: url('qishiye.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 11; 
+            background-color: rgba(255, 230, 234, 0.95); 
+        }
+        /* ---------------------------------- */
+
+        /* --- 暂停页面框专属美术资源样式 --- */
+        #pause-screen {
+            background-color: rgba(255, 230, 234, 0.8); 
+            padding: 0;
+            display: flex;
+            justify-content: center; 
+            align-items: center;
+            z-index: 10; 
+        }
+        
+        .pause-menu-container {
+            background-image: url('Spr_PauseMenuFrame.png'); 
+            background-size: 100% 100%; 
+            background-position: center;
+            background-repeat: no-repeat;
+            
+            width: 90vw; 
+            max-width: 600px; 
+            aspect-ratio: 1 / 1; 
+            
+            display: flex;
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            
+            overflow: visible; 
+            position: relative;
+        }
+        /* -------------------------------------- */
+
+        .hidden { display: none !important; }
+
+        h1 { font-size: 2.2rem; margin-bottom: 10px; font-weight: 800; letter-spacing: 2px; color: #ff6b81; text-shadow: 2px 2px 0px #fff; }
+        p { font-size: 1rem; color: #885a5a; margin-bottom: 30px; line-height: 1.6; font-weight: bold; }
+        
+        @keyframes float-anim {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+            100% { transform: translateY(0); }
+        }
+
+        /* 起始页开始按钮图片样式 */
+        .play-img-btn {
+            width: 200px;
+            max-width: 60%;
+            cursor: pointer;
+            margin-top: 10px;
+            animation: float-anim 2.5s ease-in-out infinite;
+            -webkit-user-drag: none;
+            filter: drop-shadow(0 8px 10px rgba(255, 107, 129, 0.4));
+        }
+        
+        .play-img-btn:active {
+            animation: none;
+            transform: scale(0.92) !important;
+            filter: drop-shadow(0 2px 4px rgba(255, 107, 129, 0.4));
+        }
+
+        /* 暂停页面长方形图片按钮通用样式 */
+        .pause-img-btn {
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            -webkit-user-drag: none;
+            transition: all 0.2s ease;
+            margin: 15px 0; 
+            
+            width: 200px; 
+            height: 100px; 
+            
+            background-size: 100% 100%; 
+            background-repeat: no-repeat;
+            background-position: center;
+            
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3)); 
+            position: relative; 
+            z-index: 2;
+        }
+        
+        .pause-img-btn:hover { transform: translateY(-3px); filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.3)); }
+        .pause-img-btn:active { transform: translateY(2px) scale(0.95); filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)); }
+
+        #resume-btn {
+            background-image: url('Spr_ContinueButton.png');
+        }
+        
+        #restart-btn-pause {
+            background-image: url('Spr_RestartButton.png');
+        }
+        /* ------------------------------------------- */
+
+        /* --- 修改：HUD 顶部 UI 分数框与暂停键 --- */
+        #hud {
+            position: absolute;
+            top: 20px; left: 20px; right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            z-index: 8;
+        }
+
+        .hud-box {
+            font-weight: bold;
+            color: #ff6b81; 
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 修改：横向拉长宽度以适配文字，使用 100% 100% 铺满 */
+        #score-bg {
+            background-image: url('Score Frame.png'); 
+            background-size: 100% 100%; /* 允许横向拉长包裹文字 */
+            background-position: center; 
+            background-repeat: no-repeat;
+            
+            height: 110px; 
+            width: 420px; /* 从 320px 横向拉长到 420px，完美容纳大号文字 */
+            
+            font-size: 1.8rem; 
+            padding: 0; 
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+
+        #pause-btn { 
+            background-image: url('Pause Button.png'); 
+            background-size: contain; 
+            background-position: center; 
+            background-repeat: no-repeat;
+            
+            height: 110px; 
+            width: 240px; 
+            
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            color: transparent !important; 
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+        
+        #pause-btn:hover { 
+            transform: translateY(-2px) scale(1.02);
+            filter: drop-shadow(0 6px 8px rgba(0,0,0,0.15));
+        }
+        #pause-btn:active {
+            transform: translateY(1px) scale(0.95);
+        }
+        /* ------------------------------------------- */
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="game-canvas"></canvas>
+    
+    <div id="hud" class="hidden">
+        <div class="hud-box" id="score-bg">甜蜜值: <span id="score">0</span></div>
+        <div class="hud-box" id="pause-btn">⏸ 暂停</div>
+    </div>
+
+    <div id="start-screen" class="ui-layer">
+        <h1>深夜甜品大作战</h1>
+        <p>点击屏幕掉落甜品<br>相同甜品碰撞合成豪华大蛋糕！</p>
+        <img src="play.png" id="start-btn" class="play-img-btn" alt="开始游戏">
+    </div>
+
+    <div id="pause-screen" class="ui-layer hidden">
+        <div class="pause-menu-container">
+            <button class="pause-img-btn" id="resume-btn" alt="继续游戏"></button>
+            <button class="pause-img-btn" id="restart-btn-pause" alt="重新开始"></button>
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="ui-layer hidden">
+        <h1>盘子装不下啦</h1>
+        <p>甜品堆叠太高，掉出盘子啦<br><br>最终甜蜜值: <span id="final-score" style="font-size: 1.8rem; font-weight: bold; color: #ff6b81;">0</span></p>
+        <button class="play-img-btn" id="restart-btn" style="background-color: #ff6b81; border-radius: 30px; padding: 14px 40px; aspect-ratio: auto; color: white; width: auto;" alt="再来一盘">再来一盘</button>
+    </div>
+</div>
+
+<script>
+/**
+ * 核心架构与数据字典
+ */
+
+const Elements = [
+    { level: 0, name: '蓝莓', file: 'Spr_Item_L01_Blueberry.png', radius: 18, img: null },
+    { level: 1, name: '马卡龙', file: 'Spr_Item_L02_Macaron.png', radius: 26, img: null },
+    { level: 2, name: '草莓甜甜圈', file: 'Spr_Item_L03_StrawberryDonut.png', radius: 36, img: null },
+    { level: 3, name: '法式香草泡芙', file: 'Spr_Item_L04_CreamPuff.png', radius: 48, img: null },
+    { level: 4, name: '梦幻彩虹蛋糕球', file: 'Spr_Item_L05_CakeBite.png', radius: 62, img: null },
+    { level: 5, name: '抹茶慕斯杯', file: 'Spr_Item_L06_MatchaCup.png', radius: 78, img: null },
+    { level: 6, name: '巧克力慕斯圆顶', file: 'Spr_Item_L07_ChocoDome.png', radius: 96, img: null },
+    { level: 7, name: '多层慕斯蛋糕', file: 'Spr_Item_L08_MousseCake.png', radius: 116, img: null },
+    { level: 8, name: '豪华翻糖大蛋糕', file: 'Spr_Item_L09_FondantCake.png', radius: 140, img: null }
+];
+
+Elements.forEach(el => {
+    const image = new Image();
+    image.src = el.file;
+    el.img = image;
+});
+
+// --- 全新混合音频系统 ---
+const AudioSys = {
+    ctx: null,
+    bgm: new Audio('Snd_BGM_MainLoop.mp3'),
+    sfxMergeBasic: new Audio('Snd_SFX_MergeBasic.mp3'),
+    sfxMergeCombo: new Audio('Snd_SFX_MergeCombo.mp3'),
+
+    init() {
+        if (!this.ctx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+
+        this.bgm.loop = true;
+        this.bgm.volume = 0.4; 
+    },
+
+    playBGM() {
+        this.bgm.play().catch(e => console.log("等待用户交互后播放BGM", e));
+    },
+
+    stopBGM() {
+        this.bgm.pause();
+        this.bgm.currentTime = 0;
+    },
+
+    playTone(freq, type, duration, vol) {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    },
+
+    drop() { this.playTone(600, 'sine', 0.1, 0.1); }, 
+    
+    merge(comboCount) { 
+        let snd;
+        if (comboCount > 1) {
+            snd = this.sfxMergeCombo.cloneNode(); 
+            snd.volume = 0.9;
+        } else {
+            snd = this.sfxMergeBasic.cloneNode();
+            snd.volume = 0.7;
+        }
+        snd.play().catch(e => {});
+    },
+
+    over() { 
+        this.stopBGM(); 
+        this.playTone(100, 'sawtooth', 1.0, 0.3); 
+    }
+};
+
+const Game = {
+    state: 'START',
+    score: 0,
+    canDrop: true,
+    comboCount: 0, 
+    engine: null, render: null, runner: null,
+    internalWidth: 0, internalHeight: 0,
+
+    init() {
+        this.internalWidth = window.innerWidth;
+        this.internalHeight = window.innerHeight;
+
+        const { Engine, Render, Runner, World, Bodies, Events, Composite } = Matter;
+        
+        this.engine = Engine.create();
+        this.engine.world.gravity.y = 1.2;
+        
+        this.render = Render.create({
+            canvas: document.getElementById('game-canvas'),
+            engine: this.engine,
+            options: {
+                width: this.internalWidth,
+                height: this.internalHeight,
+                wireframes: false,
+                background: 'transparent'
+            }
+        });
+
+        this.runner = Runner.create();
+        
+        this.bindEvents(Events, World, Composite);
+        this.bindUI();
+        
+        Render.run(this.render);
+    },
+
+    bindEvents(Events, World, Composite) {
+        Events.on(this.engine, 'collisionStart', (event) => {
+            if (this.state !== 'PLAYING') return;
+            const pairs = event.pairs;
+            let bodiesToRemove = [];
+            let bodiesToAdd = [];
+
+            for (let i = 0; i < pairs.length; i++) {
+                const bodyA = pairs[i].bodyA;
+                const bodyB = pairs[i].bodyB;
+
+                if (bodyA.label === bodyB.label && bodyA.label !== 'wall') {
+                    const level = parseInt(bodyA.label);
+                    if (bodyA.isMerging || bodyB.isMerging) continue;
+                    
+                    if (level < Elements.length - 1) {
+                        bodyA.isMerging = true; bodyB.isMerging = true;
+                        bodiesToRemove.push(bodyA, bodyB);
+                        
+                        const newX = (bodyA.position.x + bodyB.position.x) / 2;
+                        const newY = (bodyA.position.y + bodyB.position.y) / 2;
+                        
+                        bodiesToAdd.push(this.createBall(newX, newY, level + 1));
+                        this.addScore((level + 1) * 20);
+                        
+                        this.comboCount++;
+                        AudioSys.merge(this.comboCount);
+                    }
+                }
+            }
+
+            if (bodiesToRemove.length > 0) {
+                Composite.remove(this.engine.world, bodiesToRemove);
+                Composite.add(this.engine.world, bodiesToAdd);
+            }
+        });
+
+        Events.on(this.engine, 'afterUpdate', () => {
+            if (this.state !== 'PLAYING') return;
+            const bodies = Composite.allBodies(this.engine.world);
+            
+            const ctx = this.render.context;
+            ctx.beginPath();
+            ctx.setLineDash([10, 10]);
+            ctx.moveTo(0, 120); 
+            ctx.lineTo(this.internalWidth, 120);
+            ctx.strokeStyle = 'rgba(255, 107, 129, 0.5)'; 
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            for (let i = 0; i < bodies.length; i++) {
+                if (bodies[i].label !== 'wall') {
+                    bodies[i].lifeTime = (bodies[i].lifeTime || 0) + 1;
+                    if (bodies[i].lifeTime > 60 && bodies[i].position.y < 120 && bodies[i].speed < 0.5) {
+                        this.gameOver();
+                        break;
+                    }
+                }
+            }
+        });
+
+        Events.on(this.render, 'afterRender', () => {
+            const ctx = this.render.context;
+            const bodies = Composite.allBodies(this.engine.world);
+            
+            bodies.forEach(body => {
+                if (body.label !== 'wall') {
+                    const level = parseInt(body.label);
+                    const element = Elements[level];
+                    
+                    if(element && element.img && element.img.complete) {
+                        ctx.save();
+                        ctx.translate(body.position.x, body.position.y);
+                        ctx.rotate(body.angle);
+                        
+                        const r = element.radius;
+                        ctx.drawImage(element.img, -r, -r, r * 2, r * 2);
+                        
+                        ctx.restore();
+                    } else if (element) {
+                        ctx.save();
+                        ctx.translate(body.position.x, body.position.y);
+                        ctx.beginPath();
+                        ctx.arc(0, 0, element.radius, 0, 2 * Math.PI);
+                        ctx.fillStyle = '#e0e0e0';
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                }
+            });
+        });
+
+        const canvas = document.getElementById('game-canvas');
+        canvas.addEventListener('pointerdown', (e) => {
+            if (this.state !== 'PLAYING' || !this.canDrop) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = this.internalWidth / rect.width;
+            let x = (e.clientX - rect.left) * scaleX;
+            
+            x = Math.max(30, Math.min(x, this.internalWidth - 30)); 
+            
+            this.comboCount = 0;
+
+            const randomLevel = Math.random() > 0.8 ? 1 : 0; 
+            const ball = this.createBall(x, 50, randomLevel);
+            Matter.Composite.add(this.engine.world, ball);
+            
+            AudioSys.drop();
+            
+            this.canDrop = false;
+            setTimeout(() => { this.canDrop = true; }, 500); 
+        });
+    },
+
+    createBall(x, y, level) {
+        const element = Elements[level];
+        const body = Matter.Bodies.circle(x, y, element.radius, {
+            label: level.toString(),
+            restitution: 0.2, 
+            friction: 0.5,
+            density: 0.001 * (level + 1), 
+            render: { visible: false } 
+        });
+        body.lifeTime = 0; 
+        return body;
+    },
+
+    createWalls() {
+        const wallOptions = { isStatic: true, label: 'wall', render: { fillStyle: '#ffe6ea' } };
+        Matter.Composite.add(this.engine.world, [
+            Matter.Bodies.rectangle(this.internalWidth/2, this.internalHeight + 25, this.internalWidth, 50, wallOptions), 
+            Matter.Bodies.rectangle(-25, this.internalHeight/2, 50, this.internalHeight, wallOptions), 
+            Matter.Bodies.rectangle(this.internalWidth + 25, this.internalHeight/2, 50, this.internalHeight, wallOptions) 
+        ]);
+    },
+
+    bindUI() {
+        const $ = id => document.getElementById(id);
+        
+        $('start-btn').onclick = () => { AudioSys.init(); this.startGame(); };
+        $('pause-btn').onclick = () => this.togglePause();
+        $('resume-btn').onclick = () => this.togglePause();
+        $('restart-btn').onclick = () => this.startGame();
+        $('restart-btn-pause').onclick = () => this.startGame();
+    },
+
+    startGame() {
+        this.state = 'PLAYING';
+        this.score = 0;
+        this.updateScoreUI();
+        this.canDrop = true;
+        this.comboCount = 0; 
+        
+        Matter.Composite.clear(this.engine.world);
+        this.createWalls();
+
+        AudioSys.playBGM();
+
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('pause-screen').classList.add('hidden');
+        document.getElementById('game-over-screen').classList.add('hidden');
+        document.getElementById('hud').classList.remove('hidden');
+
+        Matter.Runner.run(this.runner, this.engine);
+    },
+
+    togglePause() {
+        if (this.state === 'PLAYING') {
+            this.state = 'PAUSED';
+            Matter.Runner.stop(this.runner);
+            document.getElementById('pause-screen').classList.remove('hidden');
+        } else if (this.state === 'PAUSED') {
+            this.state = 'PLAYING';
+            Matter.Runner.run(this.runner, this.engine);
+            document.getElementById('pause-screen').classList.add('hidden');
+        }
+    },
+
+    gameOver() {
+        this.state = 'OVER';
+        Matter.Runner.stop(this.runner);
+        AudioSys.over();
+        document.getElementById('hud').classList.add('hidden');
+        document.getElementById('final-score').innerText = this.score;
+        document.getElementById('game-over-screen').classList.remove('hidden');
+    },
+
+    addScore(points) {
+        this.score += points;
+        this.updateScoreUI();
+    },
+    
+    updateScoreUI() {
+        document.getElementById('score').innerText = this.score;
+    }
+};
+
+window.onload = () => Game.init();
+</script>
+</body>
+</html>
