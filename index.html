@@ -24,8 +24,8 @@
         #game-container {
             position: relative;
             
-            /* --- 运行页面背景图片 --- */
-            background-image: url('yunxingye.png');
+            /* --- 严格相对路径：运行页面背景图片 --- */
+            background-image: url('./yunxingye.png');
             background-size: cover; 
             background-position: center; 
             background-repeat: no-repeat; 
@@ -58,9 +58,9 @@
             text-align: center;
         }
 
-        /* --- 起始页专属背景图片样式 --- */
+        /* --- 严格相对路径：起始页专属背景图片样式 --- */
         #start-screen {
-            background-image: url('qishiye.png');
+            background-image: url('./qishiye.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -80,7 +80,8 @@
         }
         
         .pause-menu-container {
-            background-image: url('Spr_PauseMenuFrame.png'); 
+            /* 严格相对路径 */
+            background-image: url('./Spr_PauseMenuFrame.png'); 
             background-size: 100% 100%; 
             background-position: center;
             background-repeat: no-repeat;
@@ -151,16 +152,17 @@
         .pause-img-btn:hover { transform: translateY(-3px); filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.3)); }
         .pause-img-btn:active { transform: translateY(2px) scale(0.95); filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)); }
 
+        /* 严格相对路径 */
         #resume-btn {
-            background-image: url('Spr_ContinueButton.png');
+            background-image: url('./Spr_ContinueButton.png');
         }
         
         #restart-btn-pause {
-            background-image: url('Spr_RestartButton.png');
+            background-image: url('./Spr_RestartButton.png');
         }
         /* ------------------------------------------- */
 
-        /* --- 修改：HUD 顶部 UI 分数框与暂停键 --- */
+        /* --- HUD 顶部 UI 分数框与暂停键 --- */
         #hud {
             position: absolute;
             top: 20px; left: 20px; right: 20px;
@@ -180,15 +182,15 @@
             justify-content: center;
         }
 
-        /* 修改：横向拉长宽度以适配文字，使用 100% 100% 铺满 */
         #score-bg {
-            background-image: url('Score Frame.png'); 
-            background-size: 100% 100%; /* 允许横向拉长包裹文字 */
+            /* 严格相对路径，带空格的图片用引号包裹更安全 */
+            background-image: url('./Score Frame.png'); 
+            background-size: 100% 100%; 
             background-position: center; 
             background-repeat: no-repeat;
             
             height: 110px; 
-            width: 420px; /* 从 320px 横向拉长到 420px，完美容纳大号文字 */
+            width: 420px; 
             
             font-size: 1.8rem; 
             padding: 0; 
@@ -196,7 +198,8 @@
         }
 
         #pause-btn { 
-            background-image: url('Pause Button.png'); 
+            /* 严格相对路径 */
+            background-image: url('./Pause Button.png'); 
             background-size: contain; 
             background-position: center; 
             background-repeat: no-repeat;
@@ -234,7 +237,7 @@
     <div id="start-screen" class="ui-layer">
         <h1>深夜甜品大作战</h1>
         <p>点击屏幕掉落甜品<br>相同甜品碰撞合成豪华大蛋糕！</p>
-        <img src="play.png" id="start-btn" class="play-img-btn" alt="开始游戏">
+        <img src="./play.png" id="start-btn" class="play-img-btn" alt="开始游戏">
     </div>
 
     <div id="pause-screen" class="ui-layer hidden">
@@ -256,16 +259,17 @@
  * 核心架构与数据字典
  */
 
+// --- 严格相对路径：合成元素图片 ---
 const Elements = [
-    { level: 0, name: '蓝莓', file: 'Spr_Item_L01_Blueberry.png', radius: 18, img: null },
-    { level: 1, name: '马卡龙', file: 'Spr_Item_L02_Macaron.png', radius: 26, img: null },
-    { level: 2, name: '草莓甜甜圈', file: 'Spr_Item_L03_StrawberryDonut.png', radius: 36, img: null },
-    { level: 3, name: '法式香草泡芙', file: 'Spr_Item_L04_CreamPuff.png', radius: 48, img: null },
-    { level: 4, name: '梦幻彩虹蛋糕球', file: 'Spr_Item_L05_CakeBite.png', radius: 62, img: null },
-    { level: 5, name: '抹茶慕斯杯', file: 'Spr_Item_L06_MatchaCup.png', radius: 78, img: null },
-    { level: 6, name: '巧克力慕斯圆顶', file: 'Spr_Item_L07_ChocoDome.png', radius: 96, img: null },
-    { level: 7, name: '多层慕斯蛋糕', file: 'Spr_Item_L08_MousseCake.png', radius: 116, img: null },
-    { level: 8, name: '豪华翻糖大蛋糕', file: 'Spr_Item_L09_FondantCake.png', radius: 140, img: null }
+    { level: 0, name: '蓝莓', file: './Spr_Item_L01_Blueberry.png', radius: 18, img: null },
+    { level: 1, name: '马卡龙', file: './Spr_Item_L02_Macaron.png', radius: 26, img: null },
+    { level: 2, name: '草莓甜甜圈', file: './Spr_Item_L03_StrawberryDonut.png', radius: 36, img: null },
+    { level: 3, name: '法式香草泡芙', file: './Spr_Item_L04_CreamPuff.png', radius: 48, img: null },
+    { level: 4, name: '梦幻彩虹蛋糕球', file: './Spr_Item_L05_CakeBite.png', radius: 62, img: null },
+    { level: 5, name: '抹茶慕斯杯', file: './Spr_Item_L06_MatchaCup.png', radius: 78, img: null },
+    { level: 6, name: '巧克力慕斯圆顶', file: './Spr_Item_L07_ChocoDome.png', radius: 96, img: null },
+    { level: 7, name: '多层慕斯蛋糕', file: './Spr_Item_L08_MousseCake.png', radius: 116, img: null },
+    { level: 8, name: '豪华翻糖大蛋糕', file: './Spr_Item_L09_FondantCake.png', radius: 140, img: null }
 ];
 
 Elements.forEach(el => {
@@ -274,12 +278,12 @@ Elements.forEach(el => {
     el.img = image;
 });
 
-// --- 全新混合音频系统 ---
+// --- 严格相对路径：音频系统文件 ---
 const AudioSys = {
     ctx: null,
-    bgm: new Audio('Snd_BGM_MainLoop.mp3'),
-    sfxMergeBasic: new Audio('Snd_SFX_MergeBasic.mp3'),
-    sfxMergeCombo: new Audio('Snd_SFX_MergeCombo.mp3'),
+    bgm: new Audio('./Snd_BGM_MainLoop.mp3'),
+    sfxMergeBasic: new Audio('./Snd_SFX_MergeBasic.mp3'),
+    sfxMergeCombo: new Audio('./Snd_SFX_MergeCombo.mp3'),
 
     init() {
         if (!this.ctx) {
@@ -571,6 +575,9 @@ const Game = {
 };
 
 window.onload = () => Game.init();
+</script>
+</body>
+</html>
 </script>
 </body>
 </html>
